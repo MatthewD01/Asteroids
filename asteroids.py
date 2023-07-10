@@ -1,5 +1,6 @@
 import pygame 
 import numpy as np
+import random
 
 WINDOW_WIDTH = 800
 WINDOW_HEIGHT = 800
@@ -29,16 +30,16 @@ class projectile():
     
 class Asteroids():
     def spawn(self):
-        top_border_region = (np.random.randint(0,WINDOW_WIDTH), -20)
-        left_border_region = (-20, np.random.randint(0, WINDOW_HEIGHT))
-        bottom_border_region = (np.random.randint(0, WINDOW_WIDTH), WINDOW_HEIGHT+20)
-        right_border_region = (WINDOW_WIDTH + 20, np.random.randint(0, WINDOW_HEIGHT))
+        top_border_region = (random.randint(0,WINDOW_WIDTH), -20)
+        left_border_region = (-20, random.randint(0, WINDOW_HEIGHT))
+        bottom_border_region = (random.randint(0, WINDOW_WIDTH), WINDOW_HEIGHT+20)
+        right_border_region = (WINDOW_WIDTH + 20, random.randint(0, WINDOW_HEIGHT))
         coords_list = [top_border_region, left_border_region, bottom_border_region, right_border_region]
         choice = np.random.choice([0,1,2,3])
-        self.ast_generator(coords_list[choice])
+        self.asteroid_generator(coords_list[choice])
         
         
-    def ast_generator(self, spawn_coords):
+    def asteroid_generator(self, spawn_coords):
         x_position, y_position = spawn_coords
         circle_resolution = np.linspace(0, 2 * np.pi, 50)
         size = 20
