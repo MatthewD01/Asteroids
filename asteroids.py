@@ -8,13 +8,13 @@ WINDOW_HEIGHT = 800
 
 class Ship:
     def __init__(self):
-        self.dt = pygame.time.Clock().tick(60) / 1000
+        self.dt = pygame.time.Clock().tick(60) / 5
         self.player_pos = pygame.Vector2(WINDOW_WIDTH / 2, WINDOW_HEIGHT / 2)
         self.player_direction = pygame.Vector2(0, 1)
-        self.rotation_speed = self.dt * 8
+        self.rotation_speed = self.dt
 
     def translate_forward(self):
-        self.player_pos = self.player_pos + (self.player_direction / 15)
+        self.player_pos = self.player_pos + (self.player_direction / 2)
 
     def rotate_clockwise(self):
         self.player_direction.rotate_ip(self.rotation_speed)
@@ -22,7 +22,7 @@ class Ship:
     def rotate_anticlockwise(self):
         self.player_direction.rotate_ip(-self.rotation_speed)
 
-    def ship_draw(self, screen):
+    def render(self, screen):
         front = self.player_pos + self.player_direction * 10
         middle = self.player_pos - (self.player_direction * 5)
         back_left = self.player_pos + (self.player_direction.rotate(-130) * 10)
@@ -31,9 +31,10 @@ class Ship:
         pygame.draw.polygon(screen, "white", (self.ship_coords))
 
 
-class Asteroid:
+class Asteroid(pygame.sprite.Sprite):
     def __init__(self):
-        self.speed = 0.0001
+        self.speed = 0.001
+        pygame.sprite.Sprite.__init__(self)
 
     def spawn(self):
         top_border_region = (random.randint(0, WINDOW_WIDTH), -20)
@@ -47,36 +48,32 @@ class Asteroid:
             right_border_region,
         ]
         choice = np.random.choice([0, 1, 2, 3])
-        self.asteroid_generator(coords[choice])
+        self.generator(coords[choice])
 
-    def asteroid_generator(self, spawn_coords):
+    def generator(self, spawn_coords):
         x_position, y_position = spawn_coords
         circle_resolution = np.linspace(0, 2 * np.pi, 50)
-        self.asteroid_size = 20
+        self.size = 20
         self.circle = [
             (
                 (
-                    self.asteroid_size * np.cos(circle_resolution)
-                    + np.random.normal(0, 1.2, 50)
+                    self.size * np.cos(circle_resolution) + np.random.normal(0, 1.2, 50)
                 ).round(3)
             )
             + x_position,
             (
                 (
-                    self.asteroid_size * np.sin(circle_resolution)
-                    + np.random.normal(0, 1, 50)
+                    self.size * np.sin(circle_resolution) + np.random.normal(0, 1, 50)
                 ).round(3)
             )
             + y_position,
         ]
         self.spawned_asteroid = list(zip(self.circle[0], self.circle[1]))
-        print(self.spawned_asteroid)
 
     def initial_direction(self, player_position):
         self.asteroid_direction = (
             pygame.Vector2(*self.spawned_asteroid[0]) - player_position
         ) * self.speed
-        print(f"dir {pygame.Vector2.normalize(self.asteroid_direction)}")
 
     def render(self, screen):
         self.spawned_asteroid = [
@@ -90,10 +87,16 @@ class Asteroid:
 
 def main():
     pygame.init()
-    ship, asteroid = Ship(), Asteroid()
-    running = True
+    timer = 0
     screen = pygame.display.set_mode((WINDOW_WIDTH, WINDOW_HEIGHT))
+    running = True
     paused = True
+    clock = pygame.time.Clock()
+    ship, asteroid = Ship(), Asteroid()
+    onscreen_asteroids = pygame.sprite.Group()
+    onscreen_asteroids.add(Asteroid())
+    onscreen_asteroids.add(Asteroid())
+    print(onscreen_asteroids.sprites)
     asteroid.spawn()
     asteroid.initial_direction(ship.player_pos)
     while running:
@@ -111,9 +114,19 @@ def main():
         if keys[pygame.K_a]:
             ship.rotate_anticlockwise()
 
-        asteroid.render(screen)
-        ship.ship_draw(screen)
+        ship.render(screen)
+        onscreen_asteroids.draw(screen)
         pygame.display.flip()
+        timer += 1
+        if timer % 5000 == 0:
+            print(timer % 5000)
+            spawn
+
+        clock.tick(60)
+
+
+def spawn(asteroid):
+    print("spawn")
 
 
 if __name__ == "__main__":
