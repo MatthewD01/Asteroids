@@ -31,7 +31,6 @@ class Ship(pygame.sprite.Sprite):
         back_right = self.player_pos + (self.player_direction.rotate(130) * 10)
         self.coordinates = [front, back_left, middle, back_right]
         self.rect = pygame.draw.polygon(screen, "white", (self.coordinates))
-        print(f"ship rect object : {self.rect}")
 
 
 class Laser(pygame.sprite.Sprite):
@@ -53,34 +52,34 @@ class Laser(pygame.sprite.Sprite):
 class Boundaries(pygame.sprite.Group):
     def __init__(self):
         boundaries = (
-            Top_boundary(),
-            Right_boundary(),
-            Left_boundary(),
-            Bottom_boundary(),
+            TopBoundary(),
+            RightBoundary(),
+            LeftBoundary(),
+            BottomBoundary(),
         )
         self.add(boundaries)
         super().__init__()
 
 
-class Top_boundary(pygame.sprite.Sprite):
+class TopBoundary(pygame.sprite.Sprite):
     def __init__(self) -> None:
         self.rect = pygame.Rect(-50, -50, WINDOW_WIDTH + 50, 1)
         super().__init__()
 
 
-class Right_boundary(pygame.sprite.Sprite):
+class RightBoundary(pygame.sprite.Sprite):
     def __init__(self) -> None:
         self.rect = pygame.Rect(WINDOW_WIDTH + 50, -50, 1, WINDOW_HEIGHT + 50)
         super().__init__()
 
 
-class Left_boundary(pygame.sprite.Sprite):
+class LeftBoundary(pygame.sprite.Sprite):
     def __init__(self) -> None:
         self.rect = pygame.Rect(-50, -50, 1, WINDOW_HEIGHT + 50)
         super().__init__()
 
 
-class Bottom_boundary(pygame.sprite.Sprite):
+class BottomBoundary(pygame.sprite.Sprite):
     def __init__(self) -> None:
         self.rect = pygame.Rect(-50, WINDOW_HEIGHT + 50, WINDOW_WIDTH + 50, 1)
         super().__init__()
@@ -89,7 +88,7 @@ class Bottom_boundary(pygame.sprite.Sprite):
 class Asteroid(pygame.sprite.Sprite):
     def __init__(self, player_position: Ship):
         self.speed = random.randint(1, 5) / 1000
-        self.rect = 0
+        self.rect = pygame.Rect(0, 0, 0, 0)
         self.spawn()
         self.initial_direction(player_position)
         super().__init__()
@@ -141,7 +140,7 @@ class Asteroid(pygame.sprite.Sprite):
             for x, y in self.spawned_asteroid
         ]
         self.rect = pygame.draw.polygon(screen, "white", self.spawned_asteroid)
-        print(f"asteroid rect object : {self.rect}")
+        print(self.rect)
 
 
 def main():
