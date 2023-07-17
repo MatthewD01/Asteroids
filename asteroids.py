@@ -49,40 +49,18 @@ class Laser(pygame.sprite.Sprite):
         pygame.draw.rect(screen, "red", self.projectile)
 
 
-class Boundaries(pygame.sprite.Group):
-    def __init__(self):
-        boundaries = (
-            TopBoundary(),
-            RightBoundary(),
-            LeftBoundary(),
-            BottomBoundary(),
-        )
-        self.add(boundaries)
+class Boundaries(pygame.sprite.Sprite):
+    def __init__(self, screen):
+        offset = 100
+        top_left = (-offset, -offset)
+        top_right = (WINDOW_WIDTH + offset, -offset)
+        bottom_left = (-offset, WINDOW_HEIGHT + offset)
+        bottom_right = (WINDOW_WIDTH + offset, WINDOW_HEIGHT + offset)
+        self.coordinates = [top_left, top_right, bottom_right, bottom_left]
         super().__init__()
 
-
-class TopBoundary(pygame.sprite.Sprite):
-    def __init__(self) -> None:
-        self.rect = pygame.Rect(-50, -50, WINDOW_WIDTH + 50, 1)
-        super().__init__()
-
-
-class RightBoundary(pygame.sprite.Sprite):
-    def __init__(self) -> None:
-        self.rect = pygame.Rect(WINDOW_WIDTH + 50, -50, 1, WINDOW_HEIGHT + 50)
-        super().__init__()
-
-
-class LeftBoundary(pygame.sprite.Sprite):
-    def __init__(self) -> None:
-        self.rect = pygame.Rect(-50, -50, 1, WINDOW_HEIGHT + 50)
-        super().__init__()
-
-
-class BottomBoundary(pygame.sprite.Sprite):
-    def __init__(self) -> None:
-        self.rect = pygame.Rect(-50, WINDOW_HEIGHT + 50, WINDOW_WIDTH + 50, 1)
-        super().__init__()
+    def update(self, screen):
+        self.rect = pygame.draw.polygon(screen, "red", self.coordinates, width=1)
 
 
 class Asteroid(pygame.sprite.Sprite):
@@ -94,10 +72,11 @@ class Asteroid(pygame.sprite.Sprite):
         super().__init__()
 
     def spawn(self):
-        top_border_region = (random.randint(0, WINDOW_WIDTH), -20)
-        left_border_region = (-20, random.randint(0, WINDOW_HEIGHT))
-        bottom_border_region = (random.randint(0, WINDOW_WIDTH), WINDOW_HEIGHT + 20)
-        right_border_region = (WINDOW_WIDTH + 20, random.randint(0, WINDOW_HEIGHT))
+        offset = 30
+        top_border_region = (random.randint(0, WINDOW_WIDTH), -offset)
+        left_border_region = (-offset, random.randint(0, WINDOW_HEIGHT))
+        bottom_border_region = (random.randint(0, WINDOW_WIDTH), WINDOW_HEIGHT + offset)
+        right_border_region = (WINDOW_WIDTH + offset, random.randint(0, WINDOW_HEIGHT))
         coords = [
             top_border_region,
             left_border_region,
@@ -110,7 +89,7 @@ class Asteroid(pygame.sprite.Sprite):
     def generator(self, spawn_coords):
         x_position, y_position = spawn_coords
         circle_resolution = np.linspace(0, 2 * np.pi, 50)
-        self.size = 20
+        self.size = random.choice([10, 15, 20, 30])
         self.circle = [
             (
                 (
@@ -140,7 +119,6 @@ class Asteroid(pygame.sprite.Sprite):
             for x, y in self.spawned_asteroid
         ]
         self.rect = pygame.draw.polygon(screen, "white", self.spawned_asteroid)
-        print(self.rect)
 
 
 def main():
@@ -150,10 +128,9 @@ def main():
     running = True
     clock = pygame.time.Clock()
     ship = Ship()
-    # boundaries = Boundaries()
+    boundary = Boundaries(screen)
     asteroids = pygame.sprite.Group()
     lasers = pygame.sprite.Group()
-
     asteroids.add(Asteroid(ship.player_pos), Asteroid(ship.player_pos))
 
     while running:
@@ -164,6 +141,7 @@ def main():
         screen.fill("Black")
         ship.render(screen)
         lasers.update(screen)
+        boundary.update(screen)
         asteroids.update(screen)
         keys = pygame.key.get_pressed()
         if keys[pygame.K_w]:
@@ -173,20 +151,26 @@ def main():
         if keys[pygame.K_a]:
             ship.rotate_anticlockwise()
         # if keys[pygame.K_SPACE]:
-        #     lasers.add(Laser(screen, ship.player_pos, ship.player_direction))
+        #     lasers.add(Laser(ship.player_pos, ship.player_direction))
 
         timer += 1
-        if timer % 500 == 0:
+        if timer % (random.choice([50, 100, 200, 300, 500])) == 0:
             asteroids.add(Asteroid(ship.player_pos))
-
+        pygame.sprite.spritecollide(boundary, asteroids, dokill=True)
         if pygame.sprite.spritecollideany(ship, asteroids):
-            game_over()
+            break
+            # game_over()
+        print(len(asteroids.sprites()))
         clock.tick(60)
         pygame.display.flip()
 
 
 def game_over():
     print("game over")
+
+    """ + 100 for each asteroid
+    every 1000 points -> timer % decrease 50
+    """
 
 
 if __name__ == "__main__":
