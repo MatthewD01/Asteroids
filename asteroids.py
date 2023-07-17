@@ -186,14 +186,14 @@ def main():
             ship.rotate_anticlockwise()
         # if keys[pygame.K_SPACE]:
         #     lasers.add(Laser(ship.player_pos, ship.player_direction))
-        asteroids.remove(boundary_check(asteroids, offset))
 
         timer += 1
         if timer % (random.choice([50, 100, 200, 300, 500])) == 0:
             asteroids.add(Asteroid(ship.player_pos))
         if pygame.sprite.spritecollideany(ship, asteroids):
+            game_over()
             break
-            # game_over()
+        asteroids.remove(boundary_check(asteroids, offset))
         print(len(asteroids.sprites()))
         clock.tick(60)
         pygame.display.flip()
@@ -218,7 +218,6 @@ def boundary_check(asteroids, offset):
             pass
         else:
             remove_asteroids.append(asteroid)
-            print("ASTEROID")
 
     return remove_asteroids
 
