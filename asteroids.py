@@ -49,54 +49,6 @@ class Laser(pygame.sprite.Sprite):
         pygame.draw.rect(screen, "red", self.projectile)
 
 
-class Boundaries(pygame.sprite.Sprite):
-    def __init__(self, screen):
-        offset = 50
-        top_left = (-offset, -offset)
-        top_right = (WINDOW_WIDTH + offset, -offset)
-        bottom_left = (-offset, WINDOW_HEIGHT + offset)
-        bottom_right = (WINDOW_WIDTH + offset, WINDOW_HEIGHT + offset)
-        self.coordinates = [top_left, top_right, bottom_right, bottom_left]
-        left = pygame.Rect(-offset, -offset, 1, WINDOW_HEIGHT + offset)
-        top = pygame.Rect(-offset, -offset, WINDOW_WIDTH + offset, 1)
-        right = pygame.Rect(WINDOW_WIDTH + offset, -offset, -1, WINDOW_HEIGHT + offset)
-        bottom = pygame.Rect(-offset, WINDOW_HEIGHT + offset, WINDOW_WIDTH + offset, -1)
-        self.rect = pygame.Rect.unionall(left, [top, right, bottom])
-        pygame.draw.rect(screen, "red", self.rect)
-        super().__init__()
-
-    def update(self, screen):
-        self.rect = pygame.draw.polygon(screen, "red", self.coordinates, width=2)
-
-
-class LeftBoundary(pygame.sprite.Sprite):
-    def __init__(self, offset) -> None:
-        self.rect = pygame.Rect(-offset, -offset, 1, WINDOW_HEIGHT + offset)
-        super().__init__()
-
-
-class TopBoundary(pygame.sprite.Sprite):
-    def __init__(self, offset: int):
-        self.rect = pygame.Rect(-offset, -offset, WINDOW_WIDTH + offset, 1)
-        super().__init__()
-
-
-class RightBoundary(pygame.sprite.Sprite):
-    def __init__(self, offset: int):
-        self.rect = pygame.Rect(
-            -offset, WINDOW_HEIGHT + offset, WINDOW_WIDTH + offset, -1
-        )
-        super().__init__()
-
-
-class BottomBoundary(pygame.sprite.Sprite):
-    def __init__(self, offset):
-        self.rect = pygame.Rect(
-            -offset, WINDOW_HEIGHT + offset, WINDOW_WIDTH + offset, -1
-        )
-        super().__init__()
-
-
 class Asteroid(pygame.sprite.Sprite):
     def __init__(self, player_position: Ship):
         self.speed = random.randint(1, 5) / 1000
@@ -164,7 +116,6 @@ def main():
     clock = pygame.time.Clock()
     ship = Ship()
     asteroids = pygame.sprite.Group()
-    # boundary.update(screen)
     lasers = pygame.sprite.Group()
     asteroids.add(Asteroid(ship.player_pos), Asteroid(ship.player_pos))
 
@@ -205,6 +156,10 @@ def game_over():
     """ + 100 for each asteroid
     every 1000 points -> timer % decrease 50
     """
+
+
+def font_setup():
+    pygame.font.init()
 
 
 def boundary_check(asteroids, offset):
