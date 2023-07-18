@@ -40,8 +40,6 @@ class Laser(pygame.sprite.Sprite):
         x, y = player_position
         self.direction_x, self.direction_y = player_direction * 10
         self.projectile = pygame.Rect(x - 1, y, 2, 10)
-
-        print(f"projectile {self.projectile}")
         super().__init__()
 
     def update(self, screen):
@@ -111,8 +109,10 @@ def main():
     pygame.init()
     timer = 0
     offset = 50
-    screen = pygame.display.set_mode((WINDOW_WIDTH, WINDOW_HEIGHT))
     running = True
+    game_ended = False
+    screen = pygame.display.set_mode((WINDOW_WIDTH, WINDOW_HEIGHT))
+    font = font_setup()
     clock = pygame.time.Clock()
     ship = Ship()
     asteroids = pygame.sprite.Group()
@@ -123,43 +123,47 @@ def main():
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
+        if not game_ended:
+            screen.fill("Black")
+            ship.render(screen)
+            lasers.update(screen)
+            asteroids.update(screen)
+            keys = pygame.key.get_pressed()
+            if keys[pygame.K_w]:
+                ship.translate_forward()
+            if keys[pygame.K_d]:
+                ship.rotate_clockwise()
+            if keys[pygame.K_a]:
+                ship.rotate_anticlockwise()
+            # if keys[pygame.K_SPACE]:
+            #     lasers.add(Laser(ship.player_pos, ship.player_direction))
 
-        screen.fill("Black")
-        ship.render(screen)
-        lasers.update(screen)
-        asteroids.update(screen)
-        keys = pygame.key.get_pressed()
-        if keys[pygame.K_w]:
-            ship.translate_forward()
-        if keys[pygame.K_d]:
-            ship.rotate_clockwise()
-        if keys[pygame.K_a]:
-            ship.rotate_anticlockwise()
-        # if keys[pygame.K_SPACE]:
-        #     lasers.add(Laser(ship.player_pos, ship.player_direction))
+            timer += 1
+            if timer % (random.choice([50, 100, 200, 300, 500])) == 0:
+                asteroids.add(Asteroid(ship.player_pos))
+            if pygame.sprite.spritecollideany(ship, asteroids):
+                game_ended = game_over(font, screen)
 
-        timer += 1
-        if timer % (random.choice([50, 100, 200, 300, 500])) == 0:
-            asteroids.add(Asteroid(ship.player_pos))
-        if pygame.sprite.spritecollideany(ship, asteroids):
-            game_over()
-            break
-        asteroids.remove(boundary_check(asteroids, offset))
-        print(len(asteroids.sprites()))
+            asteroids.remove(boundary_check(asteroids, offset))
+        elif game_ended:
+            game_over(font, screen)
         clock.tick(60)
         pygame.display.flip()
 
 
-def game_over():
-    print("game over")
-
+def game_over(font, display):
+    text = font.render("GAME OVER", True, "red")
+    text_rect = text.get_rect()
+    text_rect.center = (WINDOW_WIDTH // 2, WINDOW_HEIGHT // 2)
+    display.blit(text, text_rect)
+    return True
     """ + 100 for each asteroid
     every 1000 points -> timer % decrease 50
     """
 
 
 def font_setup():
-    pygame.font.init()
+    return pygame.font.Font("VT323-Regular.ttf", 64)
 
 
 def boundary_check(asteroids, offset):
