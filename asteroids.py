@@ -24,7 +24,7 @@ class Ship(pygame.sprite.Sprite):
     def rotate_anticlockwise(self):
         self.player_direction.rotate_ip(-self.rotation_speed)
 
-    def render(self, screen):
+    def update(self, screen):
         front = self.player_pos + self.player_direction * 10
         middle = self.player_pos - (self.player_direction * 5)
         back_left = self.player_pos + (self.player_direction.rotate(-130) * 10)
@@ -36,15 +36,18 @@ class Ship(pygame.sprite.Sprite):
 class Laser(pygame.sprite.Sprite):
     def __init__(self, player_position, player_direction) -> None:
         self.speed = 0.1
-        # self.corners = [(0, 0), (0, 10), (2, 10), (2, 0)]
-        x, y = player_position
-        self.direction_x, self.direction_y = player_direction * 10
-        self.projectile = pygame.Rect(x - 1, y, 2, 10)
+        self.direction = player_direction
+        bottom_right = player_position + self.direction.rotate(90)
+        top_right = player_position + self.direction.rotate(5) * 20
+        top_left = player_position + self.direction.rotate(-5) * 20
+        bottom_left = player_position + self.direction.rotate(-90)
+        self.corners = [bottom_right, top_right, top_left, bottom_left]
         super().__init__()
 
     def update(self, screen):
-        self.projectile.move(self.direction_x, self.direction_y)
-        pygame.draw.rect(screen, "red", self.projectile)
+        print(f"direction{self.direction}")
+        self.corner = [corner for corner in self.corners]
+        self.rect = pygame.draw.polygon(screen, "red", self.corner)
 
 
 class Asteroid(pygame.sprite.Sprite):
@@ -117,7 +120,7 @@ def main():
     ship = Ship()
     asteroids = pygame.sprite.Group()
     lasers = pygame.sprite.Group()
-    asteroids.add(Asteroid(ship.player_pos), Asteroid(ship.player_pos))
+    # asteroids.add(Asteroid(ship.player_pos), Asteroid(ship.player_pos))
 
     while running:
         for event in pygame.event.get():
@@ -125,9 +128,9 @@ def main():
                 running = False
         if not game_ended:
             screen.fill("Black")
-            ship.render(screen)
-            lasers.update(screen)
+            ship.update(screen)
             asteroids.update(screen)
+            lasers.update(screen)
             keys = pygame.key.get_pressed()
             if keys[pygame.K_w]:
                 ship.translate_forward()
@@ -135,15 +138,15 @@ def main():
                 ship.rotate_clockwise()
             if keys[pygame.K_a]:
                 ship.rotate_anticlockwise()
-            # if keys[pygame.K_SPACE]:
-            #     lasers.add(Laser(ship.player_pos, ship.player_direction))
+            if keys[pygame.K_SPACE]:
+                lasers.add(Laser(ship.player_pos, ship.player_direction))
 
             timer += 1
-            if timer % (random.choice([50, 100, 200, 300, 500])) == 0:
-                asteroids.add(Asteroid(ship.player_pos))
+            # if timer % (random.choice([50, 100, 200, 300, 500])) == 0:
+            #     asteroids.add(Asteroid(ship.player_pos))
             if pygame.sprite.spritecollideany(ship, asteroids):
-                game_ended = game_over(font, screen)
-
+                # game_ended = game_over(font, screen)
+                game_ended = True
             asteroids.remove(boundary_check(asteroids, offset))
         elif game_ended:
             game_over(font, screen)
@@ -157,17 +160,14 @@ def game_over(font, display):
     text_rect.center = (WINDOW_WIDTH // 2, WINDOW_HEIGHT // 2)
     display.blit(text, text_rect)
     return True
-    """ + 100 for each asteroid
-    every 1000 points -> timer % decrease 50
-    """
 
 
 def font_setup():
     return pygame.font.Font("VT323-Regular.ttf", 64)
 
 
-def boundary_check(asteroids, offset):
-    new_asteroids = asteroids.sprites()
+def boundary_check(object_group: pygame.sprite.Group, offset: int):
+    new_asteroids = object_group.sprites()
     remove_asteroids = []
     for asteroid in new_asteroids:
         x_coord, y_coord, _, _ = asteroid.rect
