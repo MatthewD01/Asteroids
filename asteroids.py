@@ -1,10 +1,11 @@
 import pygame
 import numpy as np
 import random
-
+import time
 
 WINDOW_WIDTH = 800
 WINDOW_HEIGHT = 800
+FIRE_INTERVAL = 1
 
 
 class Ship(pygame.sprite.Sprite):
@@ -35,7 +36,7 @@ class Ship(pygame.sprite.Sprite):
 
 class Laser(pygame.sprite.Sprite):
     def __init__(self, player_position, player_direction) -> None:
-        self.speed = 0.1
+        self.speed = 0.3
         self.direction = player_direction
         self.pos = player_position
         bottom_right = player_position + self.direction.rotate(90)
@@ -127,6 +128,7 @@ def main():
     asteroids = pygame.sprite.Group()
     lasers = pygame.sprite.Group()
     total_score = 0
+    last_time_fired = time.time()
     # asteroids.add(Asteroid(ship.player_pos), Asteroid(ship.player_pos))
 
     while running:
@@ -147,9 +149,11 @@ def main():
             if keys[pygame.K_a]:
                 ship.rotate_anticlockwise()
             if keys[pygame.K_SPACE]:
-                lasers.add(Laser(ship.player_pos, ship.player_direction.copy()))
-                lasers.update(screen)
-
+                if time.time() - last_time_fired >= FIRE_INTERVAL:
+                    lasers.add(Laser(ship.player_pos, ship.player_direction.copy()))
+                    lasers.update(screen)
+                    last_time_fired = time.time()
+            print(time.time() - last_time_fired)
             timer += 1
             if timer % (random.choice([50, 100, 200, 300, 500])) == 0:
                 asteroids.add(Asteroid(ship.player_pos))
