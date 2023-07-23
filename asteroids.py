@@ -37,17 +37,24 @@ class Laser(pygame.sprite.Sprite):
     def __init__(self, player_position, player_direction) -> None:
         self.speed = 0.1
         self.direction = player_direction
+        self.pos = player_position
         bottom_right = player_position + self.direction.rotate(90)
         top_right = player_position + self.direction.rotate(5) * 20
         top_left = player_position + self.direction.rotate(-5) * 20
         bottom_left = player_position + self.direction.rotate(-90)
         self.corners = [bottom_right, top_right, top_left, bottom_left]
+        self.start = self.pos + self.direction * 10
+        self.end = self.pos + self.direction * 20
+
         super().__init__()
 
     def update(self, screen):
-        print(f"direction{self.direction}")
-        self.corner = [corner for corner in self.corners]
-        self.rect = pygame.draw.polygon(screen, "red", self.corner)
+        self.start += self.direction
+        self.end += self.direction
+        self.rect = pygame.draw.line(screen, "red", self.start, self.end, width=4)
+        # print(f"direction{self.direction}")
+        # self.corner = [corner for corner in self.corners]
+        # self.rect = pygame.draw.polygon(screen, "red", self.corner)
 
 
 class Asteroid(pygame.sprite.Sprite):
@@ -115,11 +122,11 @@ def main():
     running = True
     game_ended = False
     screen = pygame.display.set_mode((WINDOW_WIDTH, WINDOW_HEIGHT))
-    font = font_setup()
     clock = pygame.time.Clock()
     ship = Ship()
     asteroids = pygame.sprite.Group()
     lasers = pygame.sprite.Group()
+    total_score = 0
     # asteroids.add(Asteroid(ship.player_pos), Asteroid(ship.player_pos))
 
     while running:
@@ -131,6 +138,7 @@ def main():
             ship.update(screen)
             asteroids.update(screen)
             lasers.update(screen)
+            score(screen, total_score)
             keys = pygame.key.get_pressed()
             if keys[pygame.K_w]:
                 ship.translate_forward()
@@ -139,22 +147,45 @@ def main():
             if keys[pygame.K_a]:
                 ship.rotate_anticlockwise()
             if keys[pygame.K_SPACE]:
-                lasers.add(Laser(ship.player_pos, ship.player_direction))
+                lasers.add(Laser(ship.player_pos, ship.player_direction.copy()))
+                lasers.update(screen)
 
             timer += 1
-            # if timer % (random.choice([50, 100, 200, 300, 500])) == 0:
-            #     asteroids.add(Asteroid(ship.player_pos))
+            if timer % (random.choice([50, 100, 200, 300, 500])) == 0:
+                asteroids.add(Asteroid(ship.player_pos))
+
             if pygame.sprite.spritecollideany(ship, asteroids):
-                # game_ended = game_over(font, screen)
                 game_ended = True
+
+            if pygame.sprite.groupcollide(
+                lasers, asteroids, dokilla=True, dokillb=True
+            ):
+                total_score += 100
             asteroids.remove(boundary_check(asteroids, offset))
+            lasers.remove(boundary_check(lasers, offset))
         elif game_ended:
-            game_over(font, screen)
+            game_over(screen)
         clock.tick(60)
         pygame.display.flip()
 
 
-def game_over(font, display):
+def boundary_check(object_group: pygame.sprite.Group, offset: int):
+    objects = object_group.sprites()
+    remove_objects = []
+    for object in objects:
+        x_coord, y_coord, _, _ = object.rect
+        if -offset < x_coord < WINDOW_WIDTH + offset:
+            pass
+        elif -offset < y_coord < WINDOW_HEIGHT + offset:
+            pass
+        else:
+            remove_objects.append(object)
+
+    return remove_objects
+
+
+def game_over(display):
+    font = pygame.font.Font("VT323-Regular.ttf", 64)
     text = font.render("GAME OVER", True, "red")
     text_rect = text.get_rect()
     text_rect.center = (WINDOW_WIDTH // 2, WINDOW_HEIGHT // 2)
@@ -162,23 +193,13 @@ def game_over(font, display):
     return True
 
 
-def font_setup():
-    return pygame.font.Font("VT323-Regular.ttf", 64)
-
-
-def boundary_check(object_group: pygame.sprite.Group, offset: int):
-    new_asteroids = object_group.sprites()
-    remove_asteroids = []
-    for asteroid in new_asteroids:
-        x_coord, y_coord, _, _ = asteroid.rect
-        if -offset < x_coord < WINDOW_WIDTH + offset:
-            pass
-        elif -offset < y_coord < WINDOW_HEIGHT + offset:
-            pass
-        else:
-            remove_asteroids.append(asteroid)
-
-    return remove_asteroids
+def score(display, total_score):
+    font_size = 32
+    font = pygame.font.Font("VT323-Regular.ttf", font_size)
+    text = font.render(f"{total_score}", True, "red")
+    text_rect = text.get_rect()
+    text_rect.center = (font_size + 10, font_size + 10)
+    display.blit(text, text_rect)
 
 
 if __name__ == "__main__":
