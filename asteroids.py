@@ -2,6 +2,7 @@ import pygame
 import numpy as np
 import random
 import time
+import sys
 
 WINDOW_WIDTH = 800
 WINDOW_HEIGHT = 800
@@ -175,6 +176,7 @@ def main():
             )
         elif game_ended:
             game_over(screen)
+            try_again(screen)
         clock.tick(60)
         pygame.display.flip()
 
@@ -203,12 +205,16 @@ def game_over(display: pygame.display) -> True:
     return True
 
 
-def score(display: pygame.display, total_score: int) -> None:
-    font_size = 32
-    font = pygame.font.Font("VT323-Regular.ttf", font_size)
-    text = font.render(f"{total_score}", True, "red")
+def font(size: int, font_name: str, phrase: str, colour: str) -> list:
+    used_font = pygame.font.Font(font_name, size)
+    text = used_font.render(f"{phrase}", True, colour)
     text_rect = text.get_rect()
-    text_rect.center = (font_size + 10, font_size + 10)
+    return [text, text_rect]
+
+
+def score(display: pygame.display, total_score: int) -> None:
+    text, text_rect = font(32, "VT323-Regular.ttf", total_score, "red")
+    text_rect.center = (42, 42)
     display.blit(text, text_rect)
 
 
@@ -224,6 +230,17 @@ def score_increase(
     if total_score % 500 != 0:
         score_check = True
     return asteroid_interval, score_check
+
+
+def try_again(display):
+    text, text_rect = font(20, "VT323-Regular.ttf", "Try again(Y/N)", "red")
+    text_rect.center = (WINDOW_WIDTH // 2, WINDOW_HEIGHT // 1.5)
+    display.blit(text, text_rect)
+    keys = pygame.key.get_pressed()
+    if keys[pygame.K_y]:
+        main()
+    elif keys[pygame.K_n]:
+        sys.exit()
 
 
 if __name__ == "__main__":
