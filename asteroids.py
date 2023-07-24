@@ -16,16 +16,16 @@ class Ship(pygame.sprite.Sprite):
         self.rotation_speed = self.dt
         super().__init__()
 
-    def translate_forward(self):
+    def translate_forward(self) -> None:
         self.player_pos = self.player_pos + (self.player_direction / 1.5)
 
-    def rotate_clockwise(self):
+    def rotate_clockwise(self) -> None:
         self.player_direction.rotate_ip(self.rotation_speed)
 
-    def rotate_anticlockwise(self):
+    def rotate_anticlockwise(self) -> None:
         self.player_direction.rotate_ip(-self.rotation_speed)
 
-    def update(self, screen):
+    def update(self, screen: pygame.display) -> None:
         front = self.player_pos + self.player_direction * 10
         middle = self.player_pos - (self.player_direction * 5)
         back_left = self.player_pos + (self.player_direction.rotate(-130) * 10)
@@ -35,7 +35,9 @@ class Ship(pygame.sprite.Sprite):
 
 
 class Laser(pygame.sprite.Sprite):
-    def __init__(self, player_position, player_direction) -> None:
+    def __init__(
+        self, player_position: pygame.Vector2, player_direction: pygame.Vector2
+    ) -> None:
         self.speed = 0.3
         self.direction = player_direction
         self.pos = player_position
@@ -46,16 +48,12 @@ class Laser(pygame.sprite.Sprite):
         self.corners = [bottom_right, top_right, top_left, bottom_left]
         self.start = self.pos + self.direction * 10
         self.end = self.pos + self.direction * 20
-
         super().__init__()
 
-    def update(self, screen):
+    def update(self, screen: pygame.display) -> None:
         self.start += self.direction
         self.end += self.direction
         self.rect = pygame.draw.line(screen, "red", self.start, self.end, width=4)
-        # print(f"direction{self.direction}")
-        # self.corner = [corner for corner in self.corners]
-        # self.rect = pygame.draw.polygon(screen, "red", self.corner)
 
 
 class Asteroid(pygame.sprite.Sprite):
@@ -81,7 +79,7 @@ class Asteroid(pygame.sprite.Sprite):
         choice = np.random.choice([0, 1, 2, 3])
         self.generator(coords[choice])
 
-    def generator(self, spawn_coords):
+    def generator(self, spawn_coords: tuple) -> None:
         x_position, y_position = spawn_coords
         circle_resolution = np.linspace(0, 2 * np.pi, 50)
         self.size = random.choice([10, 15, 20, 30])
@@ -101,12 +99,12 @@ class Asteroid(pygame.sprite.Sprite):
         ]
         self.spawned_asteroid = list(zip(self.circle[0], self.circle[1]))
 
-    def initial_direction(self, player_position):
+    def initial_direction(self, player_position: pygame.Vector2) -> None:
         self.asteroid_direction = (
             pygame.Vector2(*self.spawned_asteroid[0]) - player_position
         ) * self.speed
 
-    def update(self, screen):
+    def update(self, screen: pygame.display) -> None:
         self.spawned_asteroid = [
             pygame.Vector2(
                 (x - self.asteroid_direction[0]), (y - self.asteroid_direction[1])
@@ -129,7 +127,7 @@ def main():
     lasers = pygame.sprite.Group()
     total_score = 0
     last_time_fired = time.time()
-    # asteroids.add(Asteroid(ship.player_pos), Asteroid(ship.player_pos))
+    asteroid_interval = [50, 100, 200, 300, 500]
 
     while running:
         for event in pygame.event.get():
@@ -153,9 +151,9 @@ def main():
                     lasers.add(Laser(ship.player_pos, ship.player_direction.copy()))
                     lasers.update(screen)
                     last_time_fired = time.time()
-            print(time.time() - last_time_fired)
+
             timer += 1
-            if timer % (random.choice([50, 100, 200, 300, 500])) == 0:
+            if timer % (random.choice(asteroid_interval)) == 0:
                 asteroids.add(Asteroid(ship.player_pos))
 
             if pygame.sprite.spritecollideany(ship, asteroids):
@@ -165,15 +163,19 @@ def main():
                 lasers, asteroids, dokilla=True, dokillb=True
             ):
                 total_score += 100
+
             asteroids.remove(boundary_check(asteroids, offset))
             lasers.remove(boundary_check(lasers, offset))
+            asteroid_interval = score_increase(total_score, asteroid_interval)
+            print(asteroid_interval)
+
         elif game_ended:
             game_over(screen)
         clock.tick(60)
         pygame.display.flip()
 
 
-def boundary_check(object_group: pygame.sprite.Group, offset: int):
+def boundary_check(object_group: pygame.sprite.Group, offset: int) -> list:
     objects = object_group.sprites()
     remove_objects = []
     for object in objects:
@@ -188,7 +190,7 @@ def boundary_check(object_group: pygame.sprite.Group, offset: int):
     return remove_objects
 
 
-def game_over(display):
+def game_over(display: pygame.display) -> True:
     font = pygame.font.Font("VT323-Regular.ttf", 64)
     text = font.render("GAME OVER", True, "red")
     text_rect = text.get_rect()
@@ -197,13 +199,19 @@ def game_over(display):
     return True
 
 
-def score(display, total_score):
+def score(display: pygame.display, total_score: int) -> None:
     font_size = 32
     font = pygame.font.Font("VT323-Regular.ttf", font_size)
     text = font.render(f"{total_score}", True, "red")
     text_rect = text.get_rect()
     text_rect.center = (font_size + 10, font_size + 10)
     display.blit(text, text_rect)
+
+
+def score_increase(total_score: int, asteroid_interval: list) -> list:
+    if total_score % 500:
+        asteroid_interval = [interval - 5 for interval in asteroid_interval]
+    return asteroid_interval
 
 
 if __name__ == "__main__":
