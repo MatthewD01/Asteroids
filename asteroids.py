@@ -126,8 +126,10 @@ def main():
     asteroids = pygame.sprite.Group()
     lasers = pygame.sprite.Group()
     total_score = 0
+    score_check = True
     last_time_fired = time.time()
-    asteroid_interval = [50, 100, 200, 300, 500]
+
+    asteroid_interval = [50, 100, 200, 300]
 
     while running:
         for event in pygame.event.get():
@@ -166,9 +168,11 @@ def main():
 
             asteroids.remove(boundary_check(asteroids, offset))
             lasers.remove(boundary_check(lasers, offset))
-            asteroid_interval = score_increase(total_score, asteroid_interval)
-            print(asteroid_interval)
-
+            print(f"score {total_score}")
+            print(total_score % 500)
+            asteroid_interval, score_check = score_increase(
+                total_score, asteroid_interval, score_check
+            )
         elif game_ended:
             game_over(screen)
         clock.tick(60)
@@ -208,10 +212,18 @@ def score(display: pygame.display, total_score: int) -> None:
     display.blit(text, text_rect)
 
 
-def score_increase(total_score: int, asteroid_interval: list) -> list:
-    if total_score % 500:
-        asteroid_interval = [interval - 5 for interval in asteroid_interval]
-    return asteroid_interval
+def score_increase(
+    total_score: int, asteroid_interval: list, score_check: bool
+) -> list:
+    # print(f"score {total_score}")
+    # print(total_score % 500)
+    if total_score % 500 == 0 and total_score != 0 and score_check:
+        asteroid_interval = [interval * 1.02 for interval in asteroid_interval]
+        score_check = False
+        print(asteroid_interval)
+    if total_score % 500 != 0:
+        score_check = True
+    return asteroid_interval, score_check
 
 
 if __name__ == "__main__":
