@@ -133,7 +133,7 @@ def main():
     while running:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
-                sys.exit()
+                running = False
         if not game_ended:
             screen.fill("Black")
             ship.update(screen)
@@ -170,7 +170,7 @@ def main():
             asteroid_interval, score_check = score_increase(
                 total_score, asteroid_interval, score_check
             )
-        elif game_ended:
+        else:
             game_over(screen)
             try_again(screen)
         clock.tick(60)
@@ -218,7 +218,11 @@ def score_increase(
     total_score: int, asteroid_interval: list, score_check: bool
 ) -> list:
     if total_score % 500 == 0 and total_score != 0 and score_check:
-        asteroid_interval = [interval * 1.02 for interval in asteroid_interval]
+        asteroid_interval = (
+            [interval - 2 for interval in asteroid_interval]
+            if asteroid_interval[0] >= 10
+            else asteroid_interval
+        )
         score_check = False
         print(asteroid_interval)
     if total_score % 500 != 0:
