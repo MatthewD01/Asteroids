@@ -11,49 +11,47 @@ FIRE_INTERVAL = 1
 
 class Ship(pygame.sprite.Sprite):
     def __init__(self):
-        self.dt = pygame.time.Clock().tick(60) / 5
-        self.player_pos = pygame.Vector2(WINDOW_WIDTH / 2, WINDOW_HEIGHT / 2)
-        self.player_direction = pygame.Vector2(0, 1)
-        self.rotation_speed = self.dt
+        self.position = pygame.Vector2(WINDOW_WIDTH / 2, WINDOW_HEIGHT / 2)
+        self.velocity = pygame.Vector2(1, 0)
+        self.rotation_speed = 3
         super().__init__()
 
     def translate_forward(self) -> None:
-        self.player_pos = self.player_pos + (self.player_direction / 1.5)
+        self.position = self.position + self.velocity
 
     def rotate_clockwise(self) -> None:
-        self.player_direction.rotate_ip(self.rotation_speed)
+        self.velocity.rotate_ip(self.rotation_speed)
 
     def rotate_anticlockwise(self) -> None:
-        self.player_direction.rotate_ip(-self.rotation_speed)
+        self.velocity.rotate_ip(-self.rotation_speed)
 
-    def update(self, screen: pygame.display) -> None:
-        front = self.player_pos + self.player_direction * 10
-        middle = self.player_pos - (self.player_direction * 5)
-        back_left = self.player_pos + (self.player_direction.rotate(-130) * 10)
-        back_right = self.player_pos + (self.player_direction.rotate(130) * 10)
-        self.coordinates = [front, back_left, middle, back_right]
-        self.rect = pygame.draw.polygon(screen, "white", (self.coordinates))
+    def update(self, screen: pygame.Surface) -> None:
+        self.rect = pygame.draw.polygon(
+            screen,
+            "white",
+            [
+                self.position + (self.velocity.normalize() * 10),
+                self.position + self.velocity.normalize().rotate(130) * 10,
+                self.position + self.velocity.normalize() * -2,
+                self.position + self.velocity.normalize().rotate(-130) * 10,
+            ],
+        )
 
 
 class Laser(pygame.sprite.Sprite):
     def __init__(
         self, player_position: pygame.Vector2, player_direction: pygame.Vector2
     ) -> None:
-        self.speed = 0.3
+        self.speed = 1.5
         self.direction = player_direction
-        self.pos = player_position
-        bottom_right = player_position + self.direction.rotate(90)
-        top_right = player_position + self.direction.rotate(5) * 20
-        top_left = player_position + self.direction.rotate(-5) * 20
-        bottom_left = player_position + self.direction.rotate(-90)
-        self.corners = [bottom_right, top_right, top_left, bottom_left]
-        self.start = self.pos + self.direction * 10
-        self.end = self.pos + self.direction * 20
+        self.position = player_position
+        self.start = self.position + self.direction * 10
+        self.end = self.position + self.direction * 20
         super().__init__()
 
     def update(self, screen: pygame.display) -> None:
-        self.start += self.direction
-        self.end += self.direction
+        self.start += self.direction * self.speed
+        self.end += self.direction * self.speed
         self.rect = pygame.draw.line(screen, "red", self.start, self.end, width=4)
 
 
@@ -135,7 +133,7 @@ def main():
     while running:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
-                running = False
+                sys.exit()
         if not game_ended:
             screen.fill("Black")
             ship.update(screen)
@@ -151,13 +149,13 @@ def main():
                 ship.rotate_anticlockwise()
             if keys[pygame.K_SPACE]:
                 if time.time() - last_time_fired >= FIRE_INTERVAL:
-                    lasers.add(Laser(ship.player_pos, ship.player_direction.copy()))
+                    lasers.add(Laser(ship.position, ship.velocity.normalize().copy()))
                     lasers.update(screen)
                     last_time_fired = time.time()
 
             timer += 1
             if timer % (random.choice(asteroid_interval)) == 0:
-                asteroids.add(Asteroid(ship.player_pos))
+                asteroids.add(Asteroid(ship.position))
 
             if pygame.sprite.spritecollideany(ship, asteroids):
                 game_ended = True
@@ -169,8 +167,6 @@ def main():
 
             asteroids.remove(boundary_check(asteroids, offset))
             lasers.remove(boundary_check(lasers, offset))
-            print(f"score {total_score}")
-            print(total_score % 500)
             asteroid_interval, score_check = score_increase(
                 total_score, asteroid_interval, score_check
             )
@@ -196,7 +192,7 @@ def boundary_check(object_group: pygame.sprite.Group, offset: int) -> list:
     return remove_objects
 
 
-def game_over(display: pygame.display) -> True:
+def game_over(display: pygame.Surface) -> True:
     font = pygame.font.Font("VT323-Regular.ttf", 64)
     text = font.render("GAME OVER", True, "red")
     text_rect = text.get_rect()
@@ -212,7 +208,7 @@ def font(size: int, font_name: str, phrase: str, colour: str) -> list:
     return [text, text_rect]
 
 
-def score(display: pygame.display, total_score: int) -> None:
+def score(display: pygame.Surface, total_score: int) -> None:
     text, text_rect = font(32, "VT323-Regular.ttf", total_score, "red")
     text_rect.center = (42, 42)
     display.blit(text, text_rect)
@@ -221,8 +217,6 @@ def score(display: pygame.display, total_score: int) -> None:
 def score_increase(
     total_score: int, asteroid_interval: list, score_check: bool
 ) -> list:
-    # print(f"score {total_score}")
-    # print(total_score % 500)
     if total_score % 500 == 0 and total_score != 0 and score_check:
         asteroid_interval = [interval * 1.02 for interval in asteroid_interval]
         score_check = False
@@ -232,7 +226,7 @@ def score_increase(
     return asteroid_interval, score_check
 
 
-def try_again(display):
+def try_again(display: pygame.Surface):
     text, text_rect = font(20, "VT323-Regular.ttf", "Try again(Y/N)", "red")
     text_rect.center = (WINDOW_WIDTH // 2, WINDOW_HEIGHT // 1.5)
     display.blit(text, text_rect)
