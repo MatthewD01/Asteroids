@@ -99,15 +99,16 @@ class Asteroid(pygame.sprite.Sprite):
         self.spawned_asteroid = list(zip(self.circle[0], self.circle[1]))
 
     def initial_direction(self, player_position: pygame.Vector2) -> None:
-        self.asteroid_direction = (
+        self.direction = (
             pygame.Vector2(*self.spawned_asteroid[0]) - player_position
         ) * self.speed
 
+    def split(self):
+        new_directions = [self.direction.rotate(45), self.direction.rotate(-45)]
+
     def update(self, screen: pygame.display) -> None:
         self.spawned_asteroid = [
-            pygame.Vector2(
-                (x - self.asteroid_direction[0]), (y - self.asteroid_direction[1])
-            )
+            pygame.Vector2((x - self.direction[0]), (y - self.direction[1]))
             for x, y in self.spawned_asteroid
         ]
         self.rect = pygame.draw.polygon(screen, "white", self.spawned_asteroid)
@@ -160,9 +161,10 @@ def main():
             if pygame.sprite.spritecollideany(ship, asteroids):
                 game_ended = True
 
-            if pygame.sprite.groupcollide(
+            if res := pygame.sprite.groupcollide(
                 lasers, asteroids, dokilla=True, dokillb=True
             ):
+                print(res)
                 total_score += 100
 
             asteroids.remove(boundary_check(asteroids, offset))
