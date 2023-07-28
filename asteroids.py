@@ -56,19 +56,47 @@ class Laser(pygame.sprite.Sprite):
 
 
 class Asteroid(pygame.sprite.Sprite):
-    def __init__(self, player_position: Ship):
-        self.speed = random.randint(1, 5) / 1000
+    def __init__(
+        self,
+        target_direction: pygame.Vector2 = None,
+        target: bool = True,
+        spawn_coordinates=None,
+        size: int = None,
+        speed: int = None,
+    ):
+        if speed is None:
+            speed = random.randint(1, 5) / 1000
+        if size is None:
+            size = random.choice([10, 15, 20, 30])
+
+        self.speed = speed
+        self.size = size
         self.rect = pygame.Rect(0, 0, 0, 0)
-        self.spawn()
-        self.initial_direction(player_position)
+        self.centre = (0, 0)
+        self.target_coords = target_direction
+        self.spawn_coords = spawn_coordinates
+        if self.spawn_coords is not None:
+            self.generator(self.spawn_coords)
+        else:
+            self.spawn()
+        if target:
+            self.initial_direction()
+        else:
+            self.direction = target_direction
         super().__init__()
 
     def spawn(self):
         offset = 30
         top_border_region = (random.randint(0, WINDOW_WIDTH), -offset)
         left_border_region = (-offset, random.randint(0, WINDOW_HEIGHT))
-        bottom_border_region = (random.randint(0, WINDOW_WIDTH), WINDOW_HEIGHT + offset)
-        right_border_region = (WINDOW_WIDTH + offset, random.randint(0, WINDOW_HEIGHT))
+        bottom_border_region = (
+            random.randint(0, WINDOW_WIDTH),
+            WINDOW_HEIGHT + offset,
+        )
+        right_border_region = (
+            WINDOW_WIDTH + offset,
+            random.randint(0, WINDOW_HEIGHT),
+        )
         coords = [
             top_border_region,
             left_border_region,
@@ -81,7 +109,6 @@ class Asteroid(pygame.sprite.Sprite):
     def generator(self, spawn_coords: tuple) -> None:
         x_position, y_position = spawn_coords
         circle_resolution = np.linspace(0, 2 * np.pi, 50)
-        self.size = random.choice([10, 15, 20, 30])
         self.circle = [
             (
                 (
@@ -97,20 +124,33 @@ class Asteroid(pygame.sprite.Sprite):
             + y_position,
         ]
         self.spawned_asteroid = list(zip(self.circle[0], self.circle[1]))
+        self.centre = (x_position, y_position)
 
-    def initial_direction(self, player_position: pygame.Vector2) -> None:
+    def initial_direction(self) -> None:
         self.direction = (
-            pygame.Vector2(*self.spawned_asteroid[0]) - player_position
+            pygame.Vector2(*self.spawned_asteroid[0]) - self.target_coords
         ) * self.speed
 
     def split(self):
-        new_directions = [self.direction.rotate(45), self.direction.rotate(-45)]
+        direction1, direction2 = [
+            self.direction.copy().rotate(30),
+            self.direction.copy().rotate(-30),
+        ]
+        new_speed = self.speed / 2
+        new_size = self.size / 2
+        new_asteroids = [
+            Asteroid(direction1, False, self.centre, new_size, new_speed),
+            Asteroid(direction2, False, self.centre, new_size, new_speed),
+        ]
+        return new_asteroids
 
     def update(self, screen: pygame.display) -> None:
         self.spawned_asteroid = [
             pygame.Vector2((x - self.direction[0]), (y - self.direction[1]))
             for x, y in self.spawned_asteroid
         ]
+        print(self.centre)
+        self.centre = self.centre - self.direction
         self.rect = pygame.draw.polygon(screen, "white", self.spawned_asteroid)
 
 
@@ -164,7 +204,14 @@ def main():
             if res := pygame.sprite.groupcollide(
                 lasers, asteroids, dokilla=True, dokillb=True
             ):
-                print(res)
+                killed_asteroid: Asteroid = list(res.values())[0][0]
+                print(killed_asteroid.size)
+                if killed_asteroid.size >= 20:
+                    print("success")
+                    print(f"before {asteroids}")
+                    asteroids.add(killed_asteroid.split())
+                    print(f"after {asteroids}")
+                    asteroids.update(screen)
                 total_score += 100
 
             asteroids.remove(boundary_check(asteroids, offset))
