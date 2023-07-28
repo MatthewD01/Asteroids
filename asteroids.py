@@ -149,7 +149,6 @@ class Asteroid(pygame.sprite.Sprite):
             pygame.Vector2((x - self.direction[0]), (y - self.direction[1]))
             for x, y in self.spawned_asteroid
         ]
-        print(self.centre)
         self.centre = self.centre - self.direction
         self.rect = pygame.draw.polygon(screen, "white", self.spawned_asteroid)
 
@@ -205,12 +204,8 @@ def main():
                 lasers, asteroids, dokilla=True, dokillb=True
             ):
                 killed_asteroid: Asteroid = list(res.values())[0][0]
-                print(killed_asteroid.size)
                 if killed_asteroid.size >= 20:
-                    print("success")
-                    print(f"before {asteroids}")
                     asteroids.add(killed_asteroid.split())
-                    print(f"after {asteroids}")
                     asteroids.update(screen)
                 total_score += 100
 
@@ -273,7 +268,6 @@ def score_increase(
             else asteroid_interval
         )
         score_check = False
-        print(asteroid_interval)
     if total_score % 500 != 0:
         score_check = True
     return asteroid_interval, score_check
